@@ -1,0 +1,58 @@
+import javax.xml.bind.JAXB
+import org.jooq.util.GenerationTool
+
+apply plugin: 'java'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile 'com.sparkjava:spark-core:2.3'
+    compile 'com.h2database:h2:1.4.186'
+    compile 'org.jooq:jooq:3.7.2'
+    compile 'commons-dbcp:commons-dbcp:1.4'
+    testCompile 'junit:junit:4.12'
+}
+
+// jooq generator
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'org.jooq:jooq-codegen:3.7.2'
+        classpath 'com.h2database:h2:1.4.186'
+    }
+}
+
+def writer = new StringWriter()
+def xml = new groovy.xml.MarkupBuilder(writer)
+.configuration('xmlns': 'http://www.jooq.org/xsd/jooq-codegen-3.7.0.xsd') {
+    jdbc() {
+        driver('org.h2.Driver')
+        url('jdbc:h2:tcp://localhost/~/test')
+        user('sa')
+        password('')
+    }
+    generator() {
+        database() {
+        }
+
+        generate([:]) {
+            pojos true
+            daos true
+        }
+        target() {
+            packageName('ch.aranea.db.generated')
+            directory('src/main/java')
+        }
+    }
+}
+
+// Run the code generator
+org.jooq.util.GenerationTool.generate(
+    javax.xml.bind.JAXB.unmarshal(new StringReader(writer.toString()), org.jooq.util.jaxb.Configuration.class)
+)
